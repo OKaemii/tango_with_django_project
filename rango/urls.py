@@ -5,4 +5,5 @@ from rango import views
 #allows t call function 'url' n point t d 'index' view f d mapping in 'urlpatterns'
 urlpatterns = [
     url(r'^$', views.index, name='index'),
+    url(r'^about/', views.about, name='about')
 ]
