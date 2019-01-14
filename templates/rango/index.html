@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load staticfiles %} <!-- import staticfiles into here to access files and folders inside -->
 <html>
 
   <head>
@@ -13,6 +14,7 @@
     </div>
     <div>
       <a href="/rango/about/">About</a><br />
+      <img src="{% static "images/rango.jpg" %}"alt="picture of Rango" />
     </div>
   </body>
 
