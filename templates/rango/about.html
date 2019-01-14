@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+{% load staticfiles %} <!-- import staticfiles into here to access files and folders inside -->
+<html>
+
+  <head>
+    <title>Rango - about</title>
+  </head>
+
+  <body>
+    <h1>Wango says...</h1>
+    <div>
+      ...woe be you, how about?! <br />
+      <strong>{{ boldmessage }}</strong><br />
+      <p>This tutorial has been put together by KamiSamaVanHohenheimOfMiraiSekaiThyIV!</p>
+    </div>
+    <div>
+      <a href="/rango/">Home</a><br />
+      <img src="{% static "images/thing.png" %}"alt="picture of some thing?" />
+      <img src="{{MEDIA_URL}}cat.jpg" alt="here lies a picture of a cat" />
+    </div>
+  </body>
+
+</html>

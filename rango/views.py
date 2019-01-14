@@ -11,4 +11,8 @@ def index(request):
 	return render(request, 'rango/index.html', context=context_dict)
 	#return HttpResponse("Rango says hey there partner! <br/> <a href='/rango/about/'>About</a>") #prev ver.
 def about(request):
-	return HttpResponse("Rango says here is the about page. <br/> <a href='/rango/'>Index</a>")
+	# contruct a dic to pass to the template engine as its contxtself.
+	# note the key boldmessage shld be same as {{ x }} from the templateself.
+	context_dict = {'boldmessage': "Yip, Sip, Pip, Dip, Hip, Pick!"}
+	return render(request, 'rango/about.html', context=context_dict)
+	#return HttpResponse("Rango says here is the about page. <br/> <a href='/rango/'>Index</a>")
