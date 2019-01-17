@@ -29,14 +29,15 @@ def populate():
          {"title":"Flask",
           "url":"http://flask.pocoo.org"} ]
     # creating a dictionary of dictionaries to allow iteration of each data structure
-    cats = {"Python": {"pages": python_pages},
-             "Django": {"pages": django_pages},
-             "Other Frameworks": {"pages": other_pages} }
+    cats = {"Python": {"pages": python_pages, "likes":64,"views":128},
+             "Django": {"pages": django_pages, "likes":32,"views":64},
+             "Other Frameworks": {"pages": other_pages, "likes":16,"views":32} }
     # if need add more categories/pages, add to dic above
 
     # goes through cats' dic, then add each category
     for cat, cat_data in cats.items():
-        c = add_cat(cat) # responsible for creation of categories
+        # c = add_cat(cat) # responsible for creation of categories
+        c = add_cat(cat, cat_data["views"], cat_data["likes"])
         for p in cat_data["pages"]:
             add_page(c, p["title"], p["url"]) # responsible for creation of pages
     # print out categories we have added.
@@ -54,12 +55,14 @@ def add_page(cat, title, url, views=0):
     p.save()
     return p
 
-def add_cat(name):
+def add_cat(name, views=0, likes=0):
     c = Category.objects.get_or_create(name=name)[0]
+    c.views=views
+    c.likes=likes
     c.save()
     return c
 
 # start execution here:
 if __name__ == '__main__':
-    print("starting Rango population script...")
+    print("Starting Rango population script...")
     populate()
