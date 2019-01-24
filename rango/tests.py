@@ -1,250 +1,119 @@
+# Chapter 3
 from django.test import TestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from selenium import webdriver
 from django.core.urlresolvers import reverse
-from django.contrib.staticfiles import finders
-
-# Thanks to Enzo Roiz https://github.com/enzoroiz who made these tests during an internship with us
-
-class GeneralTests(TestCase):
-    def test_serving_static_files(self):
-        # If using static media properly result is not NONE once it finds rango.jpg
-        result = finders.find('images/rango.jpg')
-        self.assertIsNotNone(result)
+import os
+import socket
+from selenium.webdriver.chrome.options import Options
 
 
-class IndexPageTests(TestCase):
-
-    def test_index_contains_hello_message(self):
-        # Check if there is the message 'Rango Says'
-        # Chapter 4
-        response = self.client.get(reverse('index'))
-        self.assertIn(b'Rango says', response.content)
-
-    def test_index_using_template(self):
-        # Check the template used to render index page
-        # Chapter 4
-        response = self.client.get(reverse('index'))
-        self.assertTemplateUsed(response, 'rango/index.html')
-
-    def test_rango_picture_displayed(self):
-        # Check if is there an image called 'rango.jpg' on the index page
-        # Chapter 4
-        response = self.client.get(reverse('index'))
-        self.assertIn(b'img src="/static/images/rango.jpg', response.content)
-
-    def test_index_has_title(self):
-        # Check to make sure that the title tag has been used
-        # And that the template contains the HTML from Chapter 4
-        response = self.client.get(reverse('index'))
-        self.assertIn(b'<title>', response.content)
-        self.assertIn(b'</title>', response.content)
-
-
-class AboutPageTests(TestCase):
-
-    def test_about_contains_create_message(self):
-        # Check if in the about page is there - and contains the specified message
-        # Exercise from Chapter 4
-        response = self.client.get(reverse('about'))
-        self.assertIn(b'This tutorial has been put together by', response.content)
-
-
-    def test_about_contain_image(self):
-        # Check if is there an image on the about page
-        # Chapter 4
-        response = self.client.get(reverse('about'))
-        self.assertIn(b'img src="/media/', response.content)
-
-    def test_about_using_template(self):
-        # Check the template used to render index page
-        # Exercise from Chapter 4
-        response = self.client.get(reverse('about'))
-
-        self.assertTemplateUsed(response, 'rango/about.html')
-
-
-
-class ModelTests(TestCase):
+# ===== CHAPTER 3
+class Chapter3LiveServerTests(StaticLiveServerTestCase):
 
     def setUp(self):
-        try:
-            from populate_rango import populate
-            populate()
-        except ImportError:
-            print('The module populate_rango does not exist')
-        except NameError:
-            print('The function populate() does not exist or is not correct')
-        except:
-            print('Something went wrong in the populate() function :-(')
+        chrome_options = Options()        
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--window-size=800x600")        
+        self.browser = webdriver.Chrome(chrome_options=chrome_options,executable_path=r'C:\chromedriver.exe')
+        self.browser.implicitly_wait(3)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.host = socket.gethostbyname(socket.gethostname())
+        super(Chapter3LiveServerTests, cls).setUpClass()
+
+    def tearDown(self):
+        self.browser.refresh()
+        self.browser.quit()        
+
+    def test_navigate_from_index_to_about(self):
+        # Go to rango main page
+        url = self.live_server_url
+        url = url.replace('localhost', '127.0.0.1')
+        self.browser.get(url + reverse('index'))
+
+        # Search for a link to About page
+        about_link = self.browser.find_element_by_partial_link_text("About")
+        about_link.click()
+
+        # Check if it goes back to the home page
+        self.assertIn(url + reverse('about'), self.browser.current_url)
+
+    def test_navigate_from_about_to_index(self):
+        # Go to rango main page
+        self.client.get(reverse('index'))
+        url = self.live_server_url
+        url = url.replace('localhost', '127.0.0.1')
+        self.browser.get(url + reverse('about'))
+
+        # Check if there is a link back to the home page
+        # link_to_home_page = self.browser.find_element_by_tag_name('a')
+        link_to_home_page = self.browser.find_element_by_link_text('Index')
+        link_to_home_page.click()
+
+        # Check if it goes back to the home page
+        self.assertEqual(url + reverse('index'), self.browser.current_url)        
 
 
-    def get_category(self, name):
-
-        from rango.models import Category
-        try:
-            cat = Category.objects.get(name=name)
-        except Category.DoesNotExist:
-            cat = None
-        return cat
-
-    def test_python_cat_added(self):
-        cat = self.get_category('Python')
-        self.assertIsNotNone(cat)
-
-    def test_python_cat_with_views(self):
-        cat = self.get_category('Python')
-        self.assertEquals(cat.views, 128)
-
-    def test_python_cat_with_likes(self):
-        cat = self.get_category('Python')
-        self.assertEquals(cat.likes, 64)
-
-
-class Chapter4ViewTests(TestCase):
+class Chapter3ViewTests(TestCase):
     def test_index_contains_hello_message(self):
         # Check if there is the message 'hello world!'
         response = self.client.get(reverse('index'))
-        self.assertIn('Rango says', response.content)
+        self.assertIn('Rango says'.lower(), response.content.decode('ascii').lower())
 
-    def test_does_index_contain_img(self):
-        # Check if the index page contains an img
-        response = self.client.get(reverse('index'))
-        self.assertIn('img', response.content)
-
-    def test_about_using_template(self):
-        # Check the template used to render index page
-        # Exercise from Chapter 4
-        response = self.client.get(reverse('about'))
-
-        self.assertTemplateUsed(response, 'rango/about.html')
-
-    def test_does_about_contain_img(self):
-        # Check if in the about page contains an image
-        response = self.client.get(reverse('about'))
-        self.assertIn('img', response.content)
+        # file.write('test_index_contains_hello_message\n')
 
     def test_about_contains_create_message(self):
-        # Check if in the about page contains the message from the exercise
+        # Check if in the about page is there a message
+        self.client.get(reverse('index'))
         response = self.client.get(reverse('about'))
-        self.assertIn('This tutorial has been put together by', response.content)
+        self.assertIn('Rango says here is the about page'.lower(), response.content.decode('ascii').lower())
 
-
-class Chapter5ViewTests(TestCase):
-
-    def setUp(self):
-        try:
-            from populate_rango import populate
-            populate()
-        except ImportError:
-            print('The module populate_rango does not exist')
-        except NameError:
-            print('The function populate() does not exist or is not correct')
-        except:
-            print('Something went wrong in the populate() function :-(')
-
-
-    def get_category(self, name):
-
-        from rango.models import Category
-        try:
-            cat = Category.objects.get(name=name)
-        except Category.DoesNotExist:
-            cat = None
-        return cat
-
-    def test_python_cat_added(self):
-        cat = self.get_category('Python')
-        self.assertIsNotNone(cat)
-
-    def test_python_cat_with_views(self):
-        cat = self.get_category('Python')
-
-        self.assertEquals(cat.views, 128)
-
-    def test_python_cat_with_likes(self):
-        cat = self.get_category('Python')
-        self.assertEquals(cat.likes, 64)
+# ===== CHAPTER 4
+class Chapter4ViewTest(TestCase):
 
     def test_view_has_title(self):
         response = self.client.get(reverse('index'))
 
         #Check title used correctly
-        self.assertIn('<title>', response.content)
-        self.assertIn('</title>', response.content)
+        self.assertIn('<title>', response.content.decode('ascii'))
+        self.assertIn('</title>', response.content.decode('ascii'))
 
-    # Need to add tests to:
-    # check admin interface - is it configured and set up
+    def test_index_using_template(self):
+        response = self.client.get(reverse('index'))
 
-    def test_admin_interface_page_view(self):
-        from admin import PageAdmin
-        self.assertIn('category', PageAdmin.list_display)
-        self.assertIn('url', PageAdmin.list_display)
+        # Check the template used to render index page
+        self.assertTemplateUsed(response, 'rango/index.html')
 
+    def test_about_using_template(self):
+        self.client.get(reverse('index'))
+        response = self.client.get(reverse('about'))
 
-class Chapter6ViewTests(TestCase):
+        # Check the template used to render about page
+        self.assertTemplateUsed(response, 'rango/about.html')
 
-    def setUp(self):
-        try:
-            from populate_rango import populate
-            populate()
-        except ImportError:
-            print('The module populate_rango does not exist')
-        except NameError:
-            print('The function populate() does not exist or is not correct')
-        except:
-            print('Something went wrong in the populate() function :-(')
+    def test_rango_picture_displayed(self):
+        response = self.client.get(reverse('index'))
 
+        # Check if is there an image in index page
+        self.assertIn('img src="/static/images/rango.jpg'.lower(), response.content.decode('ascii').lower())
 
-    # are categories displayed on index page?
+    # New media test
+    def test_cat_picture_displayed(self):
+        response = self.client.get(reverse('about'))
 
-    # does the category model have a slug field?
+        # Check if is there an image in index page
+        self.assertIn('img src="/media/cat.jpg'.lower(), response.content.decode('ascii').lower())
 
+    def test_about_contain_image(self):
+        self.client.get(reverse('index'))
+        response = self.client.get(reverse('about'))
 
-    # test the slug field works..
-    def test_does_slug_field_work(self):
-        from rango.models import Category
-        cat = Category(name='how do i create a slug in django')
-        cat.save()
-        self.assertEqual(cat.slug,'how-do-i-create-a-slug-in-django')
+        # Check if is there an image in index page
+        self.assertIn('img src="/static/images/', response.content.decode('ascii'))
 
-    # test category view does the page exist?
-
-
-    # test whether you can navigate from index to a category page
-
-
-    # test does index page contain top five pages?
-
-    # test does index page contain the words "most liked" and "most viewed"
-
-    # test does category page contain a link back to index page?
-
-
-class Chapter7ViewTests(TestCase):
-
-    def setUp(self):
-        try:
-            from forms import PageForm
-            from forms import CategoryForm
-
-        except ImportError:
-            print('The module forms does not exist')
-        except NameError:
-            print('The class PageForm does not exist or is not correct')
-        except:
-            print('Something else went wrong :-(')
-
-    pass
-    # test is there a PageForm in rango.forms
-
-    # test is there a CategoryForm in rango.forms
-
-    # test is there an add page page?
-
-    # test is there an category page?
-
-
-    # test if index contains link to add category page
-    #<a href="/rango/add_category/">Add a New Category</a><br />
-
-
-    # test if the add_page.html template exists.
+    def test_serving_static_files(self):
+        # If using static media properly result is not NONE once it finds rango.jpg
+        result = finders.find('images/rango.jpg')
+        self.assertIsNotNone(result)
