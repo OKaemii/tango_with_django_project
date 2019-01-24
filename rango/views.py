@@ -12,7 +12,10 @@ def index(request):
 	# that will be passed to the template engine.
 	# the "-" in "likes" tells it that we want it in descending order, and [:5] will return the first five.
 	category_list = Category.objects.order_by('-likes')[:5]
-	context_dict = {'categories': category_list}
+
+	page_list = Page.objects.order_by('-views')[:5]
+
+	context_dict = {'categories': category_list, 'pages': page_list}
 	# contruct a dic to pass to the template engine as its contxtself.
 	# note the key boldmessage shld be same as {{ x }} from the templateself.
 	#context_dict = {'boldmessage': "Crunchy, creamy, cookie, candy, cupcake!"}
