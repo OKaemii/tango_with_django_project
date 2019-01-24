@@ -3,15 +3,23 @@ from django.test import TestCase
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
 from django.core.urlresolvers import reverse
-import os
-import socket
+import os, socket
+
+#Chapter 4
+from django.contrib.staticfiles import finders
+
+#Chapter 5
+from rango.models import Page, Category
+import populate_rango
+import rango.test_utils as test_utils
 from selenium.webdriver.chrome.options import Options
 
-
-# ===== CHAPTER 3
-class Chapter3LiveServerTests(StaticLiveServerTestCase):
+# ===== CHAPTER 5
+class Chapter5LiveServerTests(StaticLiveServerTestCase):
 
     def setUp(self):
+        from django.contrib.auth.models import User
+        User.objects.create_superuser(username='admin', password='admin', email='admin@me.com')
         chrome_options = Options()        
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--window-size=800x600")        
@@ -21,99 +29,181 @@ class Chapter3LiveServerTests(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         cls.host = socket.gethostbyname(socket.gethostname())
-        super(Chapter3LiveServerTests, cls).setUpClass()
+        super(Chapter5LiveServerTests, cls).setUpClass()
 
     def tearDown(self):
         self.browser.refresh()
-        self.browser.quit()        
+        self.browser.quit()
 
-    def test_navigate_from_index_to_about(self):
-        # Go to rango main page
+    def test_population_script(self):
+        #Populate database
+        populate_rango.populate()
+        url = self.live_server_url
+        #url = url.replace('localhost', '127.0.0.1')
+        self.browser.get(url + reverse('admin:index'))
+
+        # Log in the admin page
+        test_utils.login(self)
+
+        # # Check if is there link to categories
+        # category_link = self.browser.find_elements_by_partial_link_text('Categor')
+        # print(category_link[0].text)
+        # category_link[0].click()
+
+        # Check for the categories saved by the population script
+        # self.browser.find_elements_by_partial_link_text('Other Frameworks')
+        # self.browser.find_elements_by_partial_link_text('Django')
+        # self.browser.find_elements_by_partial_link_text('Python')
+
+        # Check the pages saved by the population script
+        self.browser.get(url + reverse('admin:rango_page_changelist'))
+        self.browser.find_elements_by_partial_link_text('Flask')
+        self.browser.find_elements_by_partial_link_text('Bottle')
+        self.browser.find_elements_by_partial_link_text('How to Tango with Django')
+        self.browser.find_elements_by_partial_link_text('Official Django Tutorial')
+        self.browser.find_elements_by_partial_link_text('Django Rocks')
+        self.browser.find_elements_by_partial_link_text('Learn Python in 10 Minutes')
+        self.browser.find_elements_by_partial_link_text('How to Think like a Computer Scientist')
+        self.browser.find_elements_by_partial_link_text('Official Python Tutorial')
+
+    def test_admin_page_contains_title_url_and_category(self):
+        #Populate database
+        populate_rango.populate()
+
         url = self.live_server_url
         url = url.replace('localhost', '127.0.0.1')
-        self.browser.get(url + reverse('index'))
+        self.browser.get(url + reverse('admin:index'))
 
-        # Search for a link to About page
-        about_link = self.browser.find_element_by_partial_link_text("About")
-        about_link.click()
+        # Log in the admin page
+        test_utils.login(self)
 
-        # Check if it goes back to the home page
-        self.assertIn(url + reverse('about'), self.browser.current_url)
+        # Click in Pages
+        pages_link = self.browser.find_element_by_link_text('Pages')
+        pages_link.click()
 
-    def test_navigate_from_about_to_index(self):
-        # Go to rango main page
-        self.client.get(reverse('index'))
+        body = self.browser.find_element_by_tag_name('body')
+
+        # Get all pages
+        pages = Page.objects.all()
+
+        # Check all pages title, category and url are displayed
+        for page in pages:
+            self.assertIn(page.title, body.text)
+            # self.assertIn(page.category.name, body.text)
+            self.assertIn(page.url, body.text)
+
+        # Check for the Github account and PythonAnywhere account
+        body = self.browser.find_element_by_tag_name('body')
+        self.assertIn('http://www.djangorocks.com/', body.text)
+        self.assertIn('http://flask.pocoo.org', body.text)
+
+    def test_can_create_new_category_via_admin_site(self):
+        #Access admin page
         url = self.live_server_url
         url = url.replace('localhost', '127.0.0.1')
-        self.browser.get(url + reverse('about'))
+        self.browser.get(url + reverse('admin:index'))
 
-        # Check if there is a link back to the home page
-        # link_to_home_page = self.browser.find_element_by_tag_name('a')
-        link_to_home_page = self.browser.find_element_by_link_text('Index')
-        link_to_home_page.click()
+        # Check if it display admin message
+        body = self.browser.find_element_by_tag_name('body')
+        self.assertIn('Django administration', body.text)
 
-        # Check if it goes back to the home page
-        self.assertEqual(url + reverse('index'), self.browser.current_url)        
+        # Log in the admin page
+        test_utils.login(self)
+
+        # the Site Administration page
+        body = self.browser.find_element_by_tag_name('body')
+        self.assertIn('Site administration', body.text)
+
+        # Check if is there link to categories
+        category_link = self.browser.find_elements_by_partial_link_text('Categor')
+        self.assertEquals(len(category_link), 1)
+
+        # Click in the link
+        category_link[0].click()
+
+        # Empty, so check for the empty message
+        body = self.browser.find_element_by_tag_name('body')
+        self.assertIn('0 categor', body.text.lower())
+
+        # Add a category by clicking on 'Add category
+        # new_poll_link = self.browser.find_element_by_link_text('Add category')
+        new_poll_link = self.browser.find_element_by_class_name('addlink')
+        new_poll_link.click()
+
+        # Check for input field
+        body = self.browser.find_element_by_tag_name('body')
+        self.assertIn('Name:'.lower(), body.text.lower())
+
+        # Input category name
+        category_field = self.browser.find_element_by_name('name')
+        category_field.send_keys("Test Driven Development")
+
+        # Leave likes and views as 0
+
+         # Gertrude clicks the save button
+        save_button = self.browser.find_element_by_css_selector("input[value='Save']")
+        save_button.click()
+
+        # As redirected there is a link for the category
+        # category_link1 = self.browser.find_elements_by_link_text("Test Driven Development")
+
+        # self.assertEquals(len(category_link1), 0)
 
 
-class Chapter3ViewTests(TestCase):
-    def test_index_contains_hello_message(self):
-        # Check if there is the message 'hello world!'
-        response = self.client.get(reverse('index'))
-        self.assertIn('Rango says'.lower(), response.content.decode('ascii').lower())
+class Chapter5ModelTests(TestCase):
 
-        # file.write('test_index_contains_hello_message\n')
+    def test_create_a_new_category(self):
+        cat = Category(name="Python")
+        cat.save()
 
-    def test_about_contains_create_message(self):
-        # Check if in the about page is there a message
-        self.client.get(reverse('index'))
-        response = self.client.get(reverse('about'))
-        self.assertIn('Rango says here is the about page'.lower(), response.content.decode('ascii').lower())
+        # Check category is in database
+        categories_in_database = Category.objects.all()
+        self.assertEquals(len(categories_in_database), 1)
+        only_poll_in_database = categories_in_database[0]
+        self.assertEquals(only_poll_in_database, cat)
 
-# ===== CHAPTER 4
-class Chapter4ViewTest(TestCase):
+    def test_create_pages_for_categories(self):
+        cat = Category(name="Python")
+        cat.save()
 
-    def test_view_has_title(self):
-        response = self.client.get(reverse('index'))
+        # create 2 pages for category python
+        python_page = Page()
+        python_page.category = cat
+        python_page.title="Official Python Tutorial"
+        python_page.url="http://docs.python.org/2/tutorial/"
+        python_page.save()
 
-        #Check title used correctly
-        self.assertIn('<title>', response.content.decode('ascii'))
-        self.assertIn('</title>', response.content.decode('ascii'))
+        django_page = Page()
+        django_page.category = cat
+        django_page.title="Django"
+        django_page.url="https://docs.djangoproject.com/en/1.5/intro/tutorial01/"
+        django_page.save()
 
-    def test_index_using_template(self):
-        response = self.client.get(reverse('index'))
+        # Check if they both were saved
+        python_pages = cat.page_set.all()
+        self.assertEquals(python_pages.count(), 2)
 
-        # Check the template used to render index page
-        self.assertTemplateUsed(response, 'rango/index.html')
+        #Check if they were saved properly
+        first_page = python_pages[0]
+        self.assertEquals(first_page, python_page)
+        self.assertEquals(first_page.title , "Official Python Tutorial")
+        self.assertEquals(first_page.url, "http://docs.python.org/2/tutorial/")
 
-    def test_about_using_template(self):
-        self.client.get(reverse('index'))
-        response = self.client.get(reverse('about'))
+    def test_population_script_changes(self):
+        #Populate database
+        populate_rango.populate()
 
-        # Check the template used to render about page
-        self.assertTemplateUsed(response, 'rango/about.html')
+        # Check if the category has correct number of views and likes
+        cat = Category.objects.get(name='Python')
+        self.assertEquals(cat.views, 128)
+        self.assertEquals(cat.likes, 64)
 
-    def test_rango_picture_displayed(self):
-        response = self.client.get(reverse('index'))
+        # Check if the category has correct number of views and likes
+        cat = Category.objects.get(name='Django')
+        self.assertEquals(cat.views, 64)
+        self.assertEquals(cat.likes, 32)
 
-        # Check if is there an image in index page
-        self.assertIn('img src="/static/images/rango.jpg'.lower(), response.content.decode('ascii').lower())
-
-    # New media test
-    def test_cat_picture_displayed(self):
-        response = self.client.get(reverse('about'))
-
-        # Check if is there an image in index page
-        self.assertIn('img src="/media/cat.jpg'.lower(), response.content.decode('ascii').lower())
-
-    def test_about_contain_image(self):
-        self.client.get(reverse('index'))
-        response = self.client.get(reverse('about'))
-
-        # Check if is there an image in index page
-        self.assertIn('img src="/static/images/', response.content.decode('ascii'))
-
-    def test_serving_static_files(self):
-        # If using static media properly result is not NONE once it finds rango.jpg
-        result = finders.find('images/rango.jpg')
-        self.assertIsNotNone(result)
+        # Check if the category has correct number of views and likes
+        cat = Category.objects.get(name='Other Frameworks')
+        self.assertEquals(cat.views, 32)
+        self.assertEquals(cat.likes, 16)
