@@ -1,8 +1,11 @@
+from rango.forms import CategoryForm
+from rango.forms import PageForm
 from django.shortcuts import render
 from django.http import HttpResponse
 # importing catergory model
 from rango.models import Category
 from rango.models import Page
+
 
 def index(request):
 	# Query the database for a list of ALL categories currently stored.
@@ -25,8 +28,8 @@ def index(request):
 	return render(request, 'rango/index.html', context=context_dict) # render the response and send it back.
 	#return HttpResponse("Rango says hey there partner! <br/> <a href='/rango/about/'>About</a>") #prev ver.
 def about(request):
-	# contruct a dic to pass to the template engine as its contxtself.
-	# note the key boldmessage shld be same as {{ x }} from the templateself.
+	# construct a dic to pass to the template engine as its contxtself.
+	# note the key boldmessage should be same as {{ x }} from the templateself.
 	context_dict = {'boldmessage': "Yip, Sip, Pip, Dip, Hip, Pick!"}
 	return render(request, 'rango/about.html', context=context_dict)
 	#return HttpResponse("Rango says here is the about page. <br/> <a href='/rango/'>Index</a>")
@@ -35,7 +38,7 @@ def show_category(request, category_name_slug):
 	context_dict = {}
 
 	try:
-		#return a one model sintance or raise an exception.
+		#return a one model sentance or raise an exception.
 		category = Category.objects.get(slug = category_name_slug)
 
 		#retrieve all of the associated pages, filter() will return a list of page objects or empty
@@ -52,3 +55,47 @@ def show_category(request, category_name_slug):
 
 	#render and return to client
 	return render(request, 'rango/category.html', context_dict)
+
+def add_category(request):
+	form = CategoryForm()
+
+	#a http post?
+	if request.method == 'POST':
+		form = CategoryForm(request.POST)
+
+		#check if provided form valid
+		if form.is_valid():
+			#save new cat to database
+			category = form.save(commit=True)
+			print(category, category.slug)
+			#saved, so give ok message
+			#most recent cat added is on index page, thus take user back to index
+			return index(request)
+		else:
+			#form contained errors, print to terminal.
+			print(form.errors)
+	#will handle the bad form, new form, or no form supplied cases.
+	#render the form with error messages (if any)
+	return render(request, 'rango/add_category.html', {'form': form})
+
+def add_page(request, category_name_slug):
+	try:
+		Category = Category.objects.get(slug=category_name_slug)
+	except Category.DoesNotExist:
+		Category = None
+	
+	form = PageForm()
+	if request.method == 'POST':
+		form = PageForm(request.POST)
+		if form.is_valid():
+			if Category:
+				page = form.save(commit=False)
+				page.category = Category
+				page.views = 0
+				page.save()
+				return show_category(request, category_name_slug)
+		else:
+			print(form.errors)
+	
+	context_dict = {'form':form, 'category': Category}
+	return render(request, 'rango/add_page.html', context_dict)
