@@ -28,6 +28,10 @@ def index(request):
 	return render(request, 'rango/index.html', context=context_dict) # render the response and send it back.
 	#return HttpResponse("Rango says hey there partner! <br/> <a href='/rango/about/'>About</a>") #prev ver.
 def about(request):
+	#print whether method is GET or POST
+	print(request.method)
+	#print the user name, if not logged in, then 'AnonymousUser'
+	print(request.user)
 	# construct a dic to pass to the template engine as its contxtself.
 	# note the key boldmessage should be same as {{ x }} from the templateself.
 	context_dict = {'boldmessage': "Yip, Sip, Pip, Dip, Hip, Pick!"}
