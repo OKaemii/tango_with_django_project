@@ -1,20 +1,37 @@
+{% extends 'rango/base.html' %}
+{% load staticfiles %}
+{% block title_block %}
+    About
+{% endblock %}
+
+{% block body_block %}
+<div>
+    <h1>About Page</h1>
+    This tutorial has been put together by: OKaemii
+</div>
+<img src="{% static "images/rango.jpg" %}"alt="Picture of Rango" />
+<p>
+    <img src="{{MEDIA_URL}}cat.jpg" alt="Picture of Cat">
+</p>
+{% endblock %}
+<!--
 <!DOCTYPE html>
-{% load staticfiles %} <!-- import staticfiles into here to access files and folders inside -->
+{% load staticfiles %}
 <html>
 
-    <head>
-        <title>Rango - About</title>
-    </head>
+<head>
+    <title>Rango - About</title>
+</head>
 
-    <body>
-        <h1>About Page</h1>
-        rango says here is the about page
-        This tutorial has been put together by: OKaemii
-        <a href="/rango/">Index</a><br />
-        <img src="{% static "images/rango.jpg" %}" alt="Picture of Rango" />
-        <p>
+<body>
+    <h1>About Page</h1>
+    rango says here is the about page
+    This tutorial has been put together by: OKaemii
+    <a href="/rango/">Index</a><br />
+    <img src="{% static " images/rango.jpg" %}" alt="Picture of Rango" />
+    <p>
         <img src="{{MEDIA_URL}}cat.jpg" alt="Picture of Cat">
-        </p>
-
-    </body>
+    </p>
+</body>
 </html>
+-->
