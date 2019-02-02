@@ -1,5 +1,6 @@
 from rango.forms import CategoryForm
 from rango.forms import PageForm
+from rango.forms import UserForm, UserProfileForm
 from django.shortcuts import render
 from django.http import HttpResponse
 # importing catergory model
@@ -103,3 +104,54 @@ def add_page(request, category_name_slug):
 	
 	context_dict = {'form':form, 'category': category}
 	return render(request, 'rango/add_page.html', context_dict)
+
+def register(request):
+	#boolean to tell template true if registration succeeds.
+	registered = False
+
+	#if it's a HTTP POST, we're interested in processing form data.
+	if request.method == 'POST':
+		#attempt to grab info from the raw form information.
+		#need make user of both UserForm and UserProfileForm.
+		user_form = UserForm(data=request.POST)
+		profile_form = UserProfileForm(data=request.POST)
+
+		#if the two forms are valid.
+		if user_form.is_valid() and profile_form.is_valid():
+			#save user's form data to the database.
+			user = user_form.save()
+
+			#hash password for security, then update the user object.
+			user.set_password(user.password)
+			user.save()
+
+			#to sort out Userprofile instance.
+			#since we need to set the user attributes ourselves,
+			#we set commit=False. This delays saving the model
+			#until we're ready to avoid integrity problems.
+			profile = profile_form.save(commit=False)
+			profile.user = user
+
+			#user provided a dp?
+			#true, get it from input form and put it in the userprofile model
+			if 'picture' in request.FILES:
+				profile.pictures = request.FILES['picture']
+
+			#now save the userprofile model instance.
+			profile.save()
+
+			#update our variable to indicate that the template
+			#registration was successful.
+			registered = True
+		else:
+			#invalid form ot forms - mistakes or soemthing else?
+			#print problems to the terminal.
+			print(user_form.errors, profile_form.errors)
+	else:
+		#not a HTTP POSt, so we render our form using two modelform instances.
+		#these forms will be blank, ready for user input.
+		user_form = UserForm()
+		profile_form = UserProfileForm()
+	
+	#ender the template depending on the context.
+	return render(request, 'rango/register.html',{'user_form': user_form, 'profile_form': profile_form, 'registered': registered})
