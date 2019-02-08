@@ -8,6 +8,9 @@
 <div>
     <h1>About Page</h1>
     This tutorial has been put together by: OKaemii
+    {% if visits %}
+    <p>visits: {{ visits }}</p>
+    {% endif %}
 </div>
 <img src="{% static "images/rango.jpg" %}"alt="Picture of Rango" />
 <p>

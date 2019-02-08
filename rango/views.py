@@ -50,9 +50,13 @@ def about(request):
 	print(request.method)
 	#print the user name, if not logged in, then 'AnonymousUser'
 	print(request.user)
+
+	context_dict = {}
+	visitor_cookie_handler(request)
 	# construct a dic to pass to the template engine as its contxtself.
 	# note the key boldmessage should be same as {{ x }} from the templateself.
-	context_dict = {'boldmessage': "Yip, Sip, Pip, Dip, Hip, Pick!"}
+	context_dict['visits'] = request.session['visits']
+	
 	return render(request, 'rango/about.html', context=context_dict)
 	#return HttpResponse("Rango says here is the about page. <br/> <a href='/rango/'>Index</a>")
 def show_category(request, category_name_slug):
@@ -237,7 +241,7 @@ def get_server_side_cookie(request, cookie, default_val=None):
 
 # Updated the function definition
 def visitor_cookie_handler(request):
-	visits = int(get_server_side_cookie.COOKIES.get(request, 'visits','1'))
+	visits = int(get_server_side_cookie(request, 'visits','1'))
 
 	last_visit_cookie = get_server_side_cookie(request, 'last_visit', str(datetime.now()))
 	last_visit_time = datetime.strptime(last_visit_cookie[:-7], '%Y-%m-%d %H:%M:%S')
