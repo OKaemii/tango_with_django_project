@@ -159,7 +159,7 @@ def register(request):
 			#user provided a dp?
 			#true, get it from input form and put it in the userprofile model
 			if 'picture' in request.FILES:
-				profile.pictures = request.FILES['picture']
+				profile.picture = request.FILES['picture']
 
 			#now save the userprofile model instance.
 			profile.save()
