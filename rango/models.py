@@ -30,7 +30,7 @@ class Page(models.Model):
 
 class UserProfile(models.Model):
     #required line; links userprofile to a user model instance
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     #additional attributes we wish to include
     website = models.URLField(blank=True)
