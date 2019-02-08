@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 
 def index(request):
+	request.session.set_test_cookie()
 	# Query the database for a list of ALL categories currently stored.
 	# Order the categories by no. likes in descending order.
 	# Retrieve the top 5 only - or all if less than 5.
@@ -35,6 +36,9 @@ def index(request):
 	return render(request, 'rango/index.html', context=context_dict) # render the response and send it back.
 	#return HttpResponse("Rango says hey there partner! <br/> <a href='/rango/about/'>About</a>") #prev ver.
 def about(request):
+	if request.session.test_cookie_worked():
+		print("TEST COOKIE WORKED!")
+		request.session.delete_test_cookie()
 	#print whether method is GET or POST
 	print(request.method)
 	#print the user name, if not logged in, then 'AnonymousUser'
