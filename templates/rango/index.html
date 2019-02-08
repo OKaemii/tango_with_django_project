@@ -15,6 +15,7 @@
   {% else %}
     hey there partner!
   {% endif %}
+  <p>visits: {{ visits }}</p>
 </div>
 <div>
     <div>
@@ -45,7 +46,7 @@
         <strong>There are no categories present.</strong>
       {% endif %}
 </div>
-<img src="{% static "images/rango.jpg" %}"alt="Picture of Rango" />
+<img src="{% static "images/rango.jpeg" %}"alt="Picture of Rango" />
 {% endblock %}
 <!--<!DOCTYPE html> #pre skeleton, i.e. base.html
 {% load staticfiles %} <!-- import staticfiles into here to access files and folders inside -->
